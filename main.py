@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-from utils import description, calculate_means, generate_bubble_chart, create_pdf
+from utils import description, calculate_means, generate_bubble_chart, create_combined_pdf, save_bubble_chart_to_pdf
 
 
 # Initialisation du session state pour stocker les données des utilisateurs et leurs scores
@@ -416,14 +415,23 @@ else:
     elif activite == "Résultats":
         st.title("Résultats des Scorecards")
         if nom_utilisateur == "Tomas":
-            if st.button("Générer les PDFs pour tous les résultats des autres utilisateurs"):
-                for user, user_data in st.session_state['scorecard_data'].items():
-                    if user != "Tomas":  # S'assurer que Tomas ne génère pas de PDF pour ses propres données
-                        for business, data in user_data.items():
-                            if not data.empty:
-                                filename = f"./{user}_{business}_scorecard_results.pdf"
-                                create_pdf(data, filename, user, business)
-                st.success('Les PDFs pour tous les autres utilisateurs ont été générés.')
+            # Génération et téléchargement du PDF en un seul bouton
+            filename = "Résultats_Scorecards.pdf"
+
+            # Générer et sauvegarder le PDF
+            create_combined_pdf(st.session_state['scorecard_data'], filename)
+
+            # Lire le fichier en binaire
+            with open(filename, "rb") as file:
+                pdf_bytes = file.read()
+
+            # Un seul bouton qui génère et télécharge en même temps
+            st.download_button(
+                label="📥 Télécharger le PDF des résultats",
+                data=pdf_bytes,
+                file_name=filename,
+                mime="application/pdf"
+            )
 
             for user, user_data in st.session_state['scorecard_data'].items():
                 if user != "Tomas":  # S'assurer que Tomas ne voit pas ses propres résultats
@@ -461,6 +469,25 @@ else:
                 fig = generate_bubble_chart(df_results, title="Moyenne des business - Tous utilisateurs")
                 if fig:
                     st.pyplot(fig)
+
+                    # Génération et téléchargement du PDF en un seul bouton
+                    filename = "Moyenne_Businesses.pdf"
+
+                    # Générer et sauvegarder le PDF
+                    save_bubble_chart_to_pdf(fig, filename)
+
+                    # Lire le fichier en binaire
+                    with open(filename, "rb") as file:
+                        pdf_bytes = file.read()
+
+                    # Un seul bouton qui génère et télécharge en même temps
+                    st.download_button(
+                        label="📥 Télécharger le graphique en PDF",
+                        data=pdf_bytes,
+                        file_name=filename,
+                        mime="application/pdf"
+                    )
+
         else:
             st.write(f"📊 **Graphique des résultats pour {nom_utilisateur}**")
 
@@ -472,4 +499,5 @@ else:
                 fig = generate_bubble_chart(df_results, title=f"Priorisation des business pour {nom_utilisateur}")
                 if fig:
                     st.pyplot(fig)
+
 
