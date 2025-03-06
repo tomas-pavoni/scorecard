@@ -1,8 +1,6 @@
 # utils.py
 import pandas as pd
-import pickle
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
