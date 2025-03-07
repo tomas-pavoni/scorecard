@@ -129,23 +129,37 @@ def calculate_means(data, column_list):
     else:
         return 0  # Retourne 0 si aucune des colonnes n'est valide
 
-def generate_bubble_chart(df, user_name):
-    fig, ax = plt.subplots()
-    colors = plt.cm.get_cmap('tab10', len(df))
 
-    for i, row in df.iterrows():
-        x = row['Mean Strategic']
-        y = row['Mean Implementation']
-        size = row['Mean Score'] * 100  # Adjust bubble size
-        label = row['Business']
+def generate_bubble_chart(data, title="Priorisation des nouveaux business"):
+    if data.empty or data.isnull().all().all():
+        return None  # Renvoie None si les données sont vides ou NaN
 
-        bubble = ax.scatter(x, y, s=size, color=colors(i), alpha=0.6, edgecolors='w')
-        ax.annotate(label, (x, y), textcoords="offset points", xytext=(0,10), ha='center')
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-    ax.set_xlabel('Contribution aux objectifs de RES24')
-    ax.set_ylabel('Facilité d\'implémentation')
-    ax.set_title(f'Priorisation des business pour {user_name}')
+    # Définition des couleurs pour chaque business
+    colors = plt.cm.get_cmap("tab10", len(data))
+
+    # Création des bulles
+    for i, row in data.iterrows():
+        x = row["Moyenne Contribution Stratégique"]
+        y = row["Moyenne Implémentation"]
+        size = row["Score moyen Scorecard"] * 100  # Ajustement de la taille
+        label = row["Business"]
+
+        if pd.isna(x) or pd.isna(y) or pd.isna(size):
+            continue  # On ignore les valeurs NaN
+
+        ax.scatter(x, y, s=size, color=colors(i), alpha=0.6, edgecolors='k')
+        ax.annotate(label, (x, y), textcoords="offset points", xytext=(0, 10), ha='center')
+
+    # Configuration du graphique
+    ax.set_xlabel("Contribution stratégique (vision)")
+    ax.set_ylabel("Facilité d'implémentation (réalisation)")
+    ax.set_title(title, fontsize=14, fontweight='bold')
+
+    plt.grid(True, linestyle="--", alpha=0.6)
     return fig
+
 
 def save_bubble_chart_to_pdf(fig, filename):
     """Enregistre un graphique matplotlib dans un fichier PDF."""

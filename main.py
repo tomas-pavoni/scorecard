@@ -412,8 +412,10 @@ else:
 
 
     # Résultats ========================================================================================================
+    # Visualisation des résultats des critères
     elif activite == "Résultats":
-        st.title("Résultats des Scorecards")
+        st.title("Résultats des Scorecards et des Critères")
+
         if nom_utilisateur == "Tomas":
             # Génération et téléchargement du PDF en un seul bouton
             filename = "Résultats_Scorecards.pdf"
@@ -434,7 +436,7 @@ else:
             )
 
             for user, user_data in st.session_state['scorecard_data'].items():
-                if user != "Tomas":  # S'assurer que Tomas ne voit pas ses propres résultats
+                if user != "Tomas":
                     st.subheader(f"Résultats pour l'utilisateur : {user}")
                     for business, data in user_data.items():
                         if not data.empty:
@@ -442,16 +444,40 @@ else:
                             st.table(data)
                         else:
                             st.write(f"Business : {business} - Aucune donnée disponible")
+
+                    # Ajout des critères pour chaque utilisateur
+                    if user in st.session_state['data_store']:
+                        st.write(f"**Critères pour {user}**")
+                        for business, criteria_data in st.session_state['data_store'][user].items():
+                            if criteria_data:
+                                st.write(f"📌 **{business}**")
+                                df_criteria = pd.DataFrame(criteria_data.items(), columns=["Critère", "Valeur"])
+                                st.table(df_criteria)
+                            else:
+                                st.write(f"Aucun critère renseigné pour {business}")
+
         else:
-            # Les autres utilisateurs ne peuvent pas générer de PDF, ils ne voient que leurs résultats.
+            # Les autres utilisateurs ne peuvent voir que leurs propres résultats
             st.header(f"Vos résultats de Scorecard")
             user_data = st.session_state['scorecard_data'][nom_utilisateur]
+
             for business, data in user_data.items():
                 if not data.empty:
                     st.write(f"Business : {business}")
                     st.table(data)
                 else:
                     st.write(f"Aucune donnée disponible pour {business}.")
+
+            # Affichage des critères remplis par l'utilisateur
+            if nom_utilisateur in st.session_state['data_store']:
+                st.write(f"📊 **Vos critères renseignés**")
+                for business, criteria_data in st.session_state['data_store'][nom_utilisateur].items():
+                    if criteria_data:
+                        st.write(f"📌 **{business}**")
+                        df_criteria = pd.DataFrame(criteria_data.items(), columns=["Critère", "Valeur"])
+                        st.table(df_criteria)
+                    else:
+                        st.write(f"Aucun critère renseigné pour {business}.")
 
 
     # Graphes ==========================================================================================================
@@ -463,10 +489,32 @@ else:
 
             df_results = prepare_data_for_chart(nom_utilisateur)
 
-            if df_results.empty:
-                st.warning("Aucune donnée disponible. Remplissez d'abord les critères et les scorecards.")
+            # Vérification des données avant d'appeler generate_bubble_chart
+            if df_results.empty or df_results.isna().any().any():
+                st.warning(
+                    "⚠️ Impossible de générer le graphique : certaines données sont manquantes. Complétez les critères et scorecards.")
+
+                # Identifier les utilisateurs avec des données manquantes (Tomas exclu)
+                missing_info = {}
+
+                for user, user_data in st.session_state['data_store'].items():
+                    if user == "Tomas":
+                        continue  # Tomas n'est pas pris en compte
+
+                    for business in business_list:
+                        if business in user_data:
+                            df_user = pd.DataFrame(user_data[business], index=[0])  # Convertir en DataFrame
+                            if df_user.empty or df_user.isna().any().any():
+                                missing_info.setdefault(user, []).append(business)
+
+                # Affichage des utilisateurs avec données manquantes
+                if missing_info:
+                    st.error("🔍 Données manquantes détectées pour :")
+                    for user, businesses in missing_info.items():
+                        st.write(f"👤 **{user}** : {', '.join(businesses)}")
+
             else:
-                fig = generate_bubble_chart(df_results, title="Moyenne des business - Tous utilisateurs")
+                fig = generate_bubble_chart(df_results, title=f"Priorisation des business pour {nom_utilisateur}")
                 if fig:
                     st.pyplot(fig)
 
