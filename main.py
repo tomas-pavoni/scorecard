@@ -1,9 +1,12 @@
 import streamlit as st
 import pandas as pd
-from utils import (
-    description, calculate_means, generate_bubble_chart,
-    create_combined_pdf, save_bubble_chart_to_pdf, prepare_data_for_chart
+from utils.config import (
+    utilisateurs, business_list, mapping_strategiques,
+    mapping_implementation, critiques_strategiques, critiques_implementation, description
 )
+from utils.charts import generate_bubble_chart
+from utils.PDF_generator import create_combined_pdf, save_bubble_chart_to_pdf
+from utils.data_processing import prepare_data_for_chart
 
 
 # Initialisation du session state pour stocker les données des utilisateurs et leurs scores
@@ -13,74 +16,6 @@ if 'scorecard_data' not in st.session_state:
     st.session_state['scorecard_data'] = {}
 if 'current_user' not in st.session_state:
     st.session_state['current_user'] = None
-
-# Liste des noms des utilisateurs prédéfinis
-utilisateurs = ["Alexandre", "Aline", "Damien", "David", "Franck", "Giulio", "John", "Olivier", "Oliviero", "Philippe", "Thierry", "Urs", "Tomas"]
-
-# Liste prédéfinie des business pour la scorecard
-business_list = ["Calculateur réno", "Comptabilité carbone"]
-
-# Correspondance des valeurs numériques pour les critères
-mapping_strategiques = {
-    "Aucunement": 0,
-    "Faiblement": 1,
-    "Moyennement": 2,
-    "Fortement": 3,
-    "Ne sait pas": 1.5
-}
-
-mapping_implementation = {
-    "Expertise dans le domaine": {
-        "Aucune": 0,
-        "Faible": 1,
-        "Moyenne": 2,
-        "Élevée": 3,
-        "Ne sait pas": 1.5
-    },
-    "Projet pilote": {
-        "Non": 0,
-        "À définir": 1,
-        "En cours": 2,
-        "Oui": 3,
-        "Ne sait pas": 1.5
-    },
-    "Compétences internes": {
-        "Aucune": 0,
-        "Oui légèrement": 1,
-        "Oui partiellement": 2,
-        "Oui entièrement": 3,
-        "Ne sait pas": 1.5
-    }
-}
-
-# Critères stratégiques
-critiques_strategiques = {
-    "Excellence opérationnelle": [
-        "Contribue à la rénovation énergétique du parc romand",
-        "Contribue à l'assainissement énergétique du parc romand"
-    ],
-    "Développement du digital dans nos métiers": [
-        "Contribue à la digitalisation, automatisation ou simplification de nos processus métiers afin d'en améliorer le fonctionnement et l'efficacité"
-    ],
-    "Décarbonation et nouvelles technologies": [
-        "Contribue au développement de solutions innovantes qui nous permettent de nous démarquer de la concurrence",
-        "Contribue à l’essor et au développement de nouvelles technologies telles que l'IA, le machine learning ou la digitalisation au sein de l'entreprise",
-        "Contribue à la réduction des émissions carbones liées à nos activités"
-    ],
-    "Rénovation énergétique immobilière": [
-        "Contribue à la simplification des échanges d'affaires entre RES et IDGO"
-    ],
-    "Croissance et optimisation des revenus": [
-        "Contribue à la croissance du chiffre d’affaires, de l’EBIT et du chiffre d’affaires récurrent"
-    ]
-}
-
-# Critères d'implémentation
-critiques_implementation = {
-    "Expertise dans le domaine": ["Aucune", "Faible", "Moyenne", "Élevée", "Ne sait pas"],
-    "Projet pilote": ["Non", "À définir", "En cours", "Oui", "Ne sait pas"],
-    "Compétences internes": ["Aucune", "Oui légèrement", "Oui partiellement", "Oui entièrement", "Ne sait pas"]
-}
 
 
 # Page de connexion
@@ -305,7 +240,6 @@ else:
 
 
     # Résultats ========================================================================================================
-    # Visualisation des résultats des critères
     elif activite == "Résultats":
         st.title("Résultats des Scorecards et des Critères")
 
@@ -380,28 +314,43 @@ else:
         if nom_utilisateur == "Tomas":
             st.write("📊 **Graphique des moyennes des utilisateurs**")
 
-            df_results = prepare_data_for_chart(nom_utilisateur, st.session_state, business_list, mapping_strategiques, mapping_implementation)
+            df_results = prepare_data_for_chart(nom_utilisateur, st.session_state, business_list, mapping_strategiques,
+                                                mapping_implementation)
 
+            # Vérification des utilisateurs inclus dans le calcul
+            valid_users = []
+            missing_info = {}
 
-            # Vérification des données avant d'appeler generate_bubble_chart
+            for user, user_data in st.session_state['data_store'].items():
+                if user == "Tomas":
+                    continue  # Tomas est exclu des données
+
+                user_has_data = False  # Flag pour voir si l'utilisateur a des données valides
+
+                for business in business_list:
+                    if business in user_data:
+                        df_user = pd.DataFrame(user_data[business], index=[0])  # Convertir en DataFrame
+                        if df_user.empty or df_user.isna().any().any():
+                            missing_info.setdefault(user, []).append(business)
+                        else:
+                            user_has_data = True
+
+                if user_has_data:
+                    valid_users.append(user)
+
+            # Affichage des utilisateurs inclus dans le graphe
+            if valid_users:
+                st.success("✅ Utilisateurs pris en compte dans le calcul du graphe :")
+                st.write(", ".join(valid_users))
+            else:
+                st.warning("⚠️ Aucun utilisateur n'a encore rempli toutes les données.")
+
+            # Vérification des données avant d'afficher le graphe
             if df_results.empty or df_results.isna().any().any():
                 st.warning(
                     "⚠️ Impossible de générer le graphique : certaines données sont manquantes. Complétez les critères et scorecards.")
 
-                # Identifier les utilisateurs avec des données manquantes (Tomas exclu)
-                missing_info = {}
-
-                for user, user_data in st.session_state['data_store'].items():
-                    if user == "Tomas":
-                        continue  # Tomas n'est pas pris en compte
-
-                    for business in business_list:
-                        if business in user_data:
-                            df_user = pd.DataFrame(user_data[business], index=[0])  # Convertir en DataFrame
-                            if df_user.empty or df_user.isna().any().any():
-                                missing_info.setdefault(user, []).append(business)
-
-                # Affichage des utilisateurs avec données manquantes
+                # Affichage des utilisateurs avec des données incomplètes
                 if missing_info:
                     st.error("🔍 Données manquantes détectées pour :")
                     for user, businesses in missing_info.items():
@@ -433,7 +382,8 @@ else:
         else:
             st.write(f"📊 **Graphique des résultats pour {nom_utilisateur}**")
 
-            df_results = prepare_data_for_chart(nom_utilisateur, st.session_state, business_list, mapping_strategiques, mapping_implementation)
+            df_results = prepare_data_for_chart(nom_utilisateur, st.session_state, business_list, mapping_strategiques,
+                                                mapping_implementation)
 
             if df_results.empty:
                 st.warning("Aucune donnée disponible. Remplissez d'abord les critères et les scorecards.")
