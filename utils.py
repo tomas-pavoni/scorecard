@@ -1,5 +1,6 @@
 # utils.py
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from reportlab.lib.pagesizes import letter
@@ -77,92 +78,116 @@ Cette plateforme vous aide à **structurer, analyser et prioriser vos projets d�
 """
 
 
+# 📌 Calcul de la moyenne des colonnes sélectionnées
+def calculate_means(data, column_list):
+    if isinstance(data, dict):
+        df = pd.DataFrame([data])  # Convertir en DataFrame si c'est un dictionnaire
+    else:
+        df = data
 
+    valid_columns = [col for col in column_list if col in df.columns]
+    return df[valid_columns].mean().mean() if valid_columns else 0
+
+
+# 📌 Création d'un PDF avec les résultats des utilisateurs
 def create_combined_pdf(results_dict, filename):
-    """Crée un PDF unique contenant tous les résultats des utilisateurs."""
+    """Crée un PDF contenant tous les résultats des utilisateurs."""
     c = canvas.Canvas(filename, pagesize=letter)
     width, height = letter
 
     for user, user_data in results_dict.items():
         for business, data in user_data.items():
             if not data.empty:
-                # Ajout d'un en-tête
                 c.setFont("Helvetica-Bold", 14)
                 c.drawString(100, height - 40, f"Scorecard pour {business}")
                 c.drawString(100, height - 60, f"Utilisateur : {user}")
                 c.drawString(100, height - 80, f"Date : {datetime.now().strftime('%Y-%m-%d')}")
 
-                # Ajout des scores
                 c.setFont("Helvetica-Bold", 12)
                 c.drawString(100, height - 120, "Catégorie")
                 c.drawString(300, height - 120, "Score")
                 y_position = height - 140
 
                 c.setFont("Helvetica", 12)
-                for index, row in data.iterrows():
-                    text_category = f"{row['Category']}"
-                    text_score = f"{row['Score']}"
-                    c.drawString(100, y_position, text_category)
-                    c.drawString(300, y_position, str(text_score))
+                for _, row in data.iterrows():
+                    c.drawString(100, y_position, row['Category'])
+                    c.drawString(300, y_position, str(row['Score']))
                     y_position -= 20
-
-                    # Vérification pour ajouter une nouvelle page si nécessaire
                     if y_position < 100:
                         c.showPage()
                         y_position = height - 60
-
-                c.showPage()  # Nouvelle page pour le prochain utilisateur
+                c.showPage()
 
     c.save()
 
 
-def calculate_means(data, column_list):
-    if isinstance(data, dict):
-        # Convertir le dictionnaire en DataFrame si nécessaire
-        df = pd.DataFrame([data])
-    else:
-        df = data
-
-    valid_columns = [col for col in column_list if col in df.columns]
-    if valid_columns:
-        return df[valid_columns].mean().mean()
-    else:
-        return 0  # Retourne 0 si aucune des colonnes n'est valide
-
-
+# 📌 Génération d'un graphique en bulles
 def generate_bubble_chart(data, title="Priorisation des nouveaux business"):
     if data.empty or data.isnull().all().all():
-        return None  # Renvoie None si les données sont vides ou NaN
+        return None  # Évite les erreurs si les données sont vides
 
     fig, ax = plt.subplots(figsize=(12, 6))
-
-    # Définition des couleurs pour chaque business
     colors = plt.cm.get_cmap("tab10", len(data))
 
-    # Création des bulles
     for i, row in data.iterrows():
-        x = row["Moyenne Contribution Stratégique"]
-        y = row["Moyenne Implémentation"]
-        size = row["Score moyen Scorecard"] * 100  # Ajustement de la taille
-        label = row["Business"]
-
+        x, y, size, label = row["Moyenne Contribution Stratégique"], row["Moyenne Implémentation"], row["Score moyen Scorecard"] * 100, row["Business"]
         if pd.isna(x) or pd.isna(y) or pd.isna(size):
-            continue  # On ignore les valeurs NaN
-
+            continue  # Ignore les valeurs NaN
         ax.scatter(x, y, s=size, color=colors(i), alpha=0.6, edgecolors='k')
         ax.annotate(label, (x, y), textcoords="offset points", xytext=(0, 10), ha='center')
 
-    # Configuration du graphique
     ax.set_xlabel("Contribution stratégique (vision)")
     ax.set_ylabel("Facilité d'implémentation (réalisation)")
     ax.set_title(title, fontsize=14, fontweight='bold')
-
     plt.grid(True, linestyle="--", alpha=0.6)
     return fig
 
 
+# 📌 Sauvegarde d'un graphique en PDF
 def save_bubble_chart_to_pdf(fig, filename):
     """Enregistre un graphique matplotlib dans un fichier PDF."""
     with PdfPages(filename) as pdf:
         pdf.savefig(fig)
         plt.close(fig)
+
+
+# 📌 Préparation des données pour le graphique
+def prepare_data_for_chart(user, session_data, business_list, mapping_strategiques, mapping_implementation):
+    all_data = []
+    if user == "Tomas":
+        aggregated_data = {}
+        user_count = 0
+
+        for usr, usr_data in session_data['data_store'].items():
+            if usr != "Tomas":
+                user_count += 1
+                for business in business_list:
+                    if business in usr_data:
+                        data = usr_data[business]
+
+                        mean_strategic = np.mean([mapping_strategiques.get(val, 0) for val in data.values() if val in mapping_strategiques])
+                        mean_implementation = np.mean([mapping_implementation[key].get(val, 0) for key, val in data.items() if key in mapping_implementation and val in mapping_implementation[key]])
+                        mean_score = session_data['scorecard_data'].get(usr, {}).get(business, pd.DataFrame()).get("Score", pd.Series()).mean()
+
+                        if business not in aggregated_data:
+                            aggregated_data[business] = {"Moyenne Contribution Stratégique": mean_strategic, "Moyenne Implémentation": mean_implementation, "Score moyen Scorecard": mean_score}
+                        else:
+                            aggregated_data[business]["Moyenne Contribution Stratégique"] += mean_strategic
+                            aggregated_data[business]["Moyenne Implémentation"] += mean_implementation
+                            aggregated_data[business]["Score moyen Scorecard"] += mean_score
+
+        if user_count > 0:
+            for business in aggregated_data:
+                aggregated_data[business] = {key: val / user_count for key, val in aggregated_data[business].items()}
+
+        all_data = [{"Business": business, **values} for business, values in aggregated_data.items()]
+    else:
+        for business in business_list:
+            if business in session_data['data_store'].get(user, {}):
+                data = session_data['data_store'][user][business]
+                mean_strategic = np.mean([mapping_strategiques.get(val, 0) for val in data.values() if val in mapping_strategiques])
+                mean_implementation = np.mean([mapping_implementation[key].get(val, 0) for key, val in data.items() if key in mapping_implementation and val in mapping_implementation[key]])
+                mean_score = session_data['scorecard_data'].get(user, {}).get(business, pd.DataFrame()).get("Score", pd.Series()).mean()
+                all_data.append({"Business": business, "Moyenne Contribution Stratégique": mean_strategic, "Moyenne Implémentation": mean_implementation, "Score moyen Scorecard": mean_score})
+
+    return pd.DataFrame(all_data)

@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from utils import description, calculate_means, generate_bubble_chart, create_combined_pdf, save_bubble_chart_to_pdf
+from utils import (
+    description, calculate_means, generate_bubble_chart,
+    create_combined_pdf, save_bubble_chart_to_pdf, prepare_data_for_chart
+)
 
 
 # Initialisation du session state pour stocker les données des utilisateurs et leurs scores
@@ -80,114 +81,6 @@ critiques_implementation = {
     "Projet pilote": ["Non", "À définir", "En cours", "Oui", "Ne sait pas"],
     "Compétences internes": ["Aucune", "Oui légèrement", "Oui partiellement", "Oui entièrement", "Ne sait pas"]
 }
-
-
-# Fonction pour générer le graphique en bulles
-def generate_bubble_chart(data, title="Priorisation des nouveaux business"):
-    if data.empty:
-        st.warning("Aucune donnée disponible pour afficher le graphique.")
-        return None
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    # Définition des couleurs pour chaque business
-    colors = plt.cm.get_cmap("tab10", len(data))
-
-    # Création des bulles
-    for i, row in data.iterrows():
-        x = row["Moyenne Contribution Stratégique"]
-        y = row["Moyenne Implémentation"]
-        size = row["Score moyen Scorecard"] * 100  # Ajustement de la taille
-        label = row["Business"]
-
-        bubble = ax.scatter(x, y, s=size, color=colors(i), alpha=0.6, edgecolors='k')
-        ax.annotate(label, (x, y), textcoords="offset points", xytext=(0, 10), ha='center')
-
-    # Configuration du graphique
-    ax.set_xlabel("Contribution stratégique (vision)")
-    ax.set_ylabel("Facilité d'implémentation (réalisation)")
-    ax.set_title(title, fontsize=14, fontweight='bold')
-
-    plt.grid(True, linestyle="--", alpha=0.6)
-    return fig
-
-
-# Fonction pour préparer les données pour le graphique
-def prepare_data_for_chart(nom_utilisateur):
-    all_data = []
-
-    if nom_utilisateur == "Tomas":
-        # Calcul de la moyenne des résultats pour tous les utilisateurs
-        aggregated_data = {}
-        user_count = 0  # Nombre d'utilisateurs ayant des données valides
-
-        for user, user_data in st.session_state['data_store'].items():
-            if user != "Tomas":  # On exclut Tomas lui-même
-                user_count += 1
-                for business in business_list:
-                    if business in user_data:
-                        data = user_data[business]
-
-                        # Calcul des moyennes par business
-                        mean_strategic = np.mean(
-                            [mapping_strategiques.get(val, 0) for val in data.values() if val in mapping_strategiques]
-                        )
-                        mean_implementation = np.mean([
-                            mapping_implementation[key].get(val, 0)
-                            for key, val in data.items()
-                            if key in mapping_implementation and val in mapping_implementation[key]
-                        ])
-                        mean_score = st.session_state['scorecard_data'].get(user, {}).get(business, pd.DataFrame()).get(
-                            "Score", pd.Series()).mean()
-
-                        # Agrégation des résultats
-                        if business not in aggregated_data:
-                            aggregated_data[business] = {
-                                "Moyenne Contribution Stratégique": mean_strategic,
-                                "Moyenne Implémentation": mean_implementation,
-                                "Score moyen Scorecard": mean_score
-                            }
-                        else:
-                            aggregated_data[business]["Moyenne Contribution Stratégique"] += mean_strategic
-                            aggregated_data[business]["Moyenne Implémentation"] += mean_implementation
-                            aggregated_data[business]["Score moyen Scorecard"] += mean_score
-
-        # Moyenne des valeurs pour tous les utilisateurs
-        if user_count > 0:
-            for business in aggregated_data:
-                aggregated_data[business]["Moyenne Contribution Stratégique"] /= user_count
-                aggregated_data[business]["Moyenne Implémentation"] /= user_count
-                aggregated_data[business]["Score moyen Scorecard"] /= user_count
-
-        # Convertir en DataFrame
-        all_data = [{"Business": business, **values} for business, values in aggregated_data.items()]
-
-    else:
-        # Si l'utilisateur n'est pas Tomas, calcul normal
-        for business in business_list:
-            if business in st.session_state['data_store'].get(nom_utilisateur, {}):
-                data = st.session_state['data_store'][nom_utilisateur][business]
-
-                mean_strategic = np.mean(
-                    [mapping_strategiques.get(val, 0) for val in data.values() if val in mapping_strategiques]
-                )
-                mean_implementation = np.mean([
-                    mapping_implementation[key].get(val, 0)
-                    for key, val in data.items()
-                    if key in mapping_implementation and val in mapping_implementation[key]
-                ])
-                mean_score = st.session_state['scorecard_data'].get(nom_utilisateur, {}).get(business,
-                                                                                             pd.DataFrame()).get(
-                    "Score", pd.Series()).mean()
-
-                all_data.append({
-                    "Business": business,
-                    "Moyenne Contribution Stratégique": mean_strategic,
-                    "Moyenne Implémentation": mean_implementation,
-                    "Score moyen Scorecard": mean_score
-                })
-
-    return pd.DataFrame(all_data)
 
 
 # Page de connexion
@@ -487,7 +380,8 @@ else:
         if nom_utilisateur == "Tomas":
             st.write("📊 **Graphique des moyennes des utilisateurs**")
 
-            df_results = prepare_data_for_chart(nom_utilisateur)
+            df_results = prepare_data_for_chart(nom_utilisateur, st.session_state, business_list, mapping_strategiques, mapping_implementation)
+
 
             # Vérification des données avant d'appeler generate_bubble_chart
             if df_results.empty or df_results.isna().any().any():
@@ -539,7 +433,7 @@ else:
         else:
             st.write(f"📊 **Graphique des résultats pour {nom_utilisateur}**")
 
-            df_results = prepare_data_for_chart(nom_utilisateur)
+            df_results = prepare_data_for_chart(nom_utilisateur, st.session_state, business_list, mapping_strategiques, mapping_implementation)
 
             if df_results.empty:
                 st.warning("Aucune donnée disponible. Remplissez d'abord les critères et les scorecards.")
@@ -547,5 +441,3 @@ else:
                 fig = generate_bubble_chart(df_results, title=f"Priorisation des business pour {nom_utilisateur}")
                 if fig:
                     st.pyplot(fig)
-
-
