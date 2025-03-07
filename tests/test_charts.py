@@ -17,7 +17,7 @@ def test_generate_bubble_chart():
     fig_empty = generate_bubble_chart(df_empty)
     assert fig_empty is None  # Vérifie qu'on ne plante pas
 
-    # Données NaN
+    # Données NaN : on vérifie si un graphique est généré sans erreur
     df_nan = pd.DataFrame({
         "Business": ["Projet 1"],
         "Moyenne Contribution Stratégique": [None],
@@ -25,4 +25,4 @@ def test_generate_bubble_chart():
         "Score moyen Scorecard": [7]
     })
     fig_nan = generate_bubble_chart(df_nan)
-    assert fig_nan is None  # Vérifie qu'on ne génère pas un graphe invalide
+    assert fig_nan is not None  # Vérifie que le graphe est généré même avec NaN

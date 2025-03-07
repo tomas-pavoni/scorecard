@@ -1,14 +1,12 @@
-# 📌 charts.py – Gestion des graphiques avec Matplotlib
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 def generate_bubble_chart(data, title="Priorisation des nouveaux business"):
-    """Génère un graphique en bulles basé sur les données."""
     if data.empty or data.isnull().all().all():
         return None  # Évite les erreurs si les données sont vides
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    colors = plt.cm.get_cmap("tab10", len(data))
+    colors = plt.get_cmap("tab10")  # ✅ Correction
 
     for i, row in data.iterrows():
         x, y, size, label = row["Moyenne Contribution Stratégique"], row["Moyenne Implémentation"], row["Score moyen Scorecard"] * 100, row["Business"]

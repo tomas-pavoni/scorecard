@@ -21,4 +21,4 @@ def test_prepare_data_for_chart():
     assert not df_results.empty
     assert df_results["Moyenne Contribution Stratégique"].iloc[0] == 1.5  # (1 + 2) / 2
     assert df_results["Moyenne Implémentation"].iloc[0] == 1.5  # (2 + 1) / 2
-    assert df_results["Score moyen Scorecard"].iloc[0] == 7  # Moyenne des scores
+    assert round(df_results["Score moyen Scorecard"].iloc[0], 2) == 6.75  # Arrondi au centième

@@ -17,7 +17,8 @@ def prepare_data_for_chart(user, session_data, business_list, mapping_strategiqu
 
                         mean_strategic = np.mean([mapping_strategiques.get(val, 0) for val in data.values() if val in mapping_strategiques])
                         mean_implementation = np.mean([mapping_implementation[key].get(val, 0) for key, val in data.items() if key in mapping_implementation and val in mapping_implementation[key]])
-                        mean_score = session_data['scorecard_data'].get(usr, {}).get(business, pd.DataFrame()).get("Score", pd.Series()).mean()
+                        mean_score = session_data['scorecard_data'].get(usr, {}).get(business, pd.DataFrame()).get("Score", pd.Series(dtype=float)).mean()
+
 
                         if business not in aggregated_data:
                             aggregated_data[business] = {"Moyenne Contribution Stratégique": mean_strategic, "Moyenne Implémentation": mean_implementation, "Score moyen Scorecard": mean_score}
