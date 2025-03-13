@@ -241,20 +241,16 @@ else:
 
     # Résultats ========================================================================================================
     elif activite == "Résultats":
-        st.title("Résultats des Scorecards et des Critères")
+        st.title("📊 Résultats des Scorecards et des Critères")
 
         if nom_utilisateur == "Tomas":
-            # Génération et téléchargement du PDF en un seul bouton
+            # ✅ **Téléchargement des résultats en PDF**
             filename = "Résultats_Scorecards.pdf"
-
-            # Générer et sauvegarder le PDF
             create_combined_pdf(st.session_state['scorecard_data'], filename)
 
-            # Lire le fichier en binaire
             with open(filename, "rb") as file:
                 pdf_bytes = file.read()
 
-            # Un seul bouton qui génère et télécharge en même temps
             st.download_button(
                 label="📥 Télécharger le PDF des résultats",
                 data=pdf_bytes,
@@ -262,26 +258,66 @@ else:
                 mime="application/pdf"
             )
 
-            for user, user_data in st.session_state['scorecard_data'].items():
-                if user != "Tomas":
-                    st.subheader(f"Résultats pour l'utilisateur : {user}")
-                    for business, data in user_data.items():
-                        if not data.empty:
-                            st.write(f"Business : {business}")
-                            st.table(data)
-                        else:
-                            st.write(f"Business : {business} - Aucune donnée disponible")
+            # ✅ **Lister les utilisateurs ayant rempli des Scorecards**
+            utilisateurs_ayant_saisi = [
+                user for user in st.session_state['scorecard_data'] if user != "Tomas"
+            ]
 
-                    # Ajout des critères pour chaque utilisateur
-                    if user in st.session_state['data_store']:
-                        st.write(f"**Critères pour {user}**")
-                        for business, criteria_data in st.session_state['data_store'][user].items():
-                            if criteria_data:
-                                st.write(f"📌 **{business}**")
-                                df_criteria = pd.DataFrame(criteria_data.items(), columns=["Critère", "Valeur"])
-                                st.table(df_criteria)
-                            else:
-                                st.write(f"Aucun critère renseigné pour {business}")
+            if not utilisateurs_ayant_saisi:
+                st.warning("⚠️ Aucun utilisateur n'a encore rempli de Scorecard.")
+            else:
+                # Dictionnaire pour stocker les scores moyens par section et catégorie
+                scorecard_means = {}
+
+                # **Collecter les données pour la moyenne globale**
+                for user in utilisateurs_ayant_saisi:
+                    for business, df in st.session_state['scorecard_data'][user].items():
+                        if not df.empty:
+                            for _, row in df.iterrows():
+                                section = row["Section"]
+                                category = row["Category"]
+                                score = row["Score"]
+
+                                if (section, category) not in scorecard_means:
+                                    scorecard_means[(section, category)] = []
+
+                                scorecard_means[(section, category)].append(score)
+
+                # ✅ **Construire la Scorecard Moyenne**
+                avg_scorecard_data = []
+
+                for (section, category), scores in scorecard_means.items():
+                    avg_score = sum(scores) / len(scores)
+                    avg_scorecard_data.append({
+                        "Section": section,
+                        "Category": category,
+                        "Score": round(avg_score)  # Arrondi à 2 décimales
+                    })
+
+                if avg_scorecard_data:
+                    df_avg_scorecard = pd.DataFrame(avg_scorecard_data)
+
+                    # **Afficher en haut la Scorecard Moyenne**
+                    st.subheader("📊 Scorecard Moyenne des Utilisateurs")
+                    st.table(df_avg_scorecard)
+
+                    # **Afficher en haut la liste des utilisateurs pris en compte**
+                    st.subheader("👥 Utilisateurs ayant rempli une Scorecard")
+                    st.write(", ".join(utilisateurs_ayant_saisi))
+
+                # ✅ **Afficher la Scorecard pour chaque utilisateur**
+                st.subheader("📊 Résultats des Scorecards par utilisateur")
+
+                for user in utilisateurs_ayant_saisi:
+                    st.markdown(f"### 📋 Scorecard de {user}")
+
+                    for business, df in st.session_state['scorecard_data'][user].items():
+                        if not df.empty:
+                            st.write(f"🔹 **{business}**")
+                            mean_score = df["Score"].mean()
+                            st.write(f"📌 **Moyenne des Scores** : {mean_score:.2f}")
+                            st.table(df)
+
 
         else:
             # Les autres utilisateurs ne peuvent voir que leurs propres résultats
@@ -362,7 +398,7 @@ else:
                     st.pyplot(fig)
 
                     # Génération et téléchargement du PDF en un seul bouton
-                    filename = "Moyenne_Businesses.pdf"
+                    filename = "Graphe_Businesses.pdf"
 
                     # Générer et sauvegarder le PDF
                     save_bubble_chart_to_pdf(fig, filename)
