@@ -1,4 +1,11 @@
-.idea/workspace.xml
+# Ignorer les environnements virtuels et les binaires compilés
+venv/
 __pycache__/
 *.pyc
-venv/
+
+# Tauri et fichiers de build
+src-tauri/target/
+src-tauri/node_modules/
+dist/
+build/
+.DS_Store
