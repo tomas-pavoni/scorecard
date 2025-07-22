@@ -1,0 +1,10 @@
+/Users/tomaspavoni/Desktop/RES/Scorecard/src-tauri/target/release/deps/libcargo_toml-6b594549b11c4509.rmeta: /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/cargo_toml.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/afs.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/error.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/inheritable.rs
+
+/Users/tomaspavoni/Desktop/RES/Scorecard/src-tauri/target/release/deps/libcargo_toml-6b594549b11c4509.rlib: /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/cargo_toml.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/afs.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/error.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/inheritable.rs
+
+/Users/tomaspavoni/Desktop/RES/Scorecard/src-tauri/target/release/deps/cargo_toml-6b594549b11c4509.d: /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/cargo_toml.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/afs.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/error.rs /Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/inheritable.rs
+
+/Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/cargo_toml.rs:
+/Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/afs.rs:
+/Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/error.rs:
+/Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.1/src/inheritable.rs:
