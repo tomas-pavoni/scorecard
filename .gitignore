@@ -1,11 +1,19 @@
-# Ignorer les environnements virtuels et les binaires compilés
-venv/
-__pycache__/
-*.pyc
-
-# Tauri et fichiers de build
-src-tauri/target/
-src-tauri/node_modules/
+# Node and Tauri
+/src-tauri/target/
+/src-tauri/node_modules/
 dist/
 build/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
