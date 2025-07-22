@@ -1,1 +1,0 @@
-["/Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-2.4.1/scripts/bundle.global.js","/Users/tomaspavoni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-plugin-opener-2.2.6/api-iife.js"]
