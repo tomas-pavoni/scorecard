@@ -1,4 +1,4 @@
-#!/Users/tomaspavoni/Desktop/RES/Scorecard/venv/bin/python3
+#!/Users/tomaspavoni/Doc/Scorecard/venv/bin/python3.11
 # -*- coding: utf-8 -*-
 import re
 import sys
